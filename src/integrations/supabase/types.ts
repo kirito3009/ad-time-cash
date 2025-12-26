@@ -101,6 +101,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_reply: string | null
@@ -228,6 +249,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_action_type: string
+          p_max_count: number
+          p_user_id: string
+          p_window_minutes: number
+        }
+        Returns: boolean
+      }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       decrypt_payment_details: {
         Args: { encrypted_data: string }
         Returns: string
@@ -250,6 +281,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      record_rate_limit: {
+        Args: { p_action_type: string; p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
