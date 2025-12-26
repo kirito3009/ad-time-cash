@@ -30,12 +30,12 @@ const settingsSchema = z.object({
 
 interface Profile {
   id: string;
-  email: string;
   full_name: string | null;
   total_earnings: number;
   total_watch_time: number;
   ads_watched: number;
   created_at: string;
+  email?: string; // Fetched separately via RPC for admins
 }
 
 interface Ad {
@@ -109,9 +109,19 @@ export default function Admin() {
   }, [isAdmin]);
 
   const fetchAllData = async () => {
-    // Fetch profiles
+    // Fetch profiles (email is no longer in profiles table for security)
     const { data: profilesData } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (profilesData) setProfiles(profilesData);
+    
+    if (profilesData) {
+      // Fetch emails for each user via secure RPC function (admin only)
+      const profilesWithEmails = await Promise.all(
+        profilesData.map(async (profile) => {
+          const { data: email } = await supabase.rpc('get_user_email', { _user_id: profile.id });
+          return { ...profile, email: email || 'N/A' };
+        })
+      );
+      setProfiles(profilesWithEmails);
+    }
 
     // Fetch ads
     const { data: adsData } = await supabase.from('ads').select('*').order('created_at', { ascending: false });
@@ -124,18 +134,27 @@ export default function Admin() {
       .order('created_at', { ascending: false });
     
     if (withdrawalsData) {
-      // Fetch profile emails for each withdrawal
+      // Fetch profile names and emails for each withdrawal via secure RPC
       const userIds = [...new Set(withdrawalsData.map(w => w.user_id))];
-      const { data: profilesData } = await supabase
+      const { data: profilesForWithdrawals } = await supabase
         .from('profiles')
-        .select('id, email, full_name')
+        .select('id, full_name')
         .in('id', userIds);
       
-      const profileMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      const profileMap = new Map(profilesForWithdrawals?.map(p => [p.id, p]) || []);
+      
+      // Fetch emails via secure RPC
+      const emailMap = new Map<string, string>();
+      await Promise.all(
+        userIds.map(async (userId) => {
+          const { data: email } = await supabase.rpc('get_user_email', { _user_id: userId });
+          emailMap.set(userId, email || 'N/A');
+        })
+      );
       
       const withdrawalsWithProfiles = withdrawalsData.map(w => ({
         ...w,
-        user_email: profileMap.get(w.user_id)?.email,
+        user_email: emailMap.get(w.user_id),
         user_name: profileMap.get(w.user_id)?.full_name,
       }));
       

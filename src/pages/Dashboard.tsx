@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
   full_name: string | null;
-  email: string;
   avatar_url: string | null;
   total_earnings: number;
   total_watch_time: number;
@@ -143,7 +142,7 @@ export default function Dashboard() {
                   <img src={profile.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
                 )}
                 <span className="hidden sm:block text-sm font-medium text-foreground">
-                  {profile?.full_name || profile?.email}
+                  {profile?.full_name || user?.email}
                 </span>
               </div>
             </div>
