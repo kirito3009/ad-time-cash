@@ -154,10 +154,8 @@ export type Database = {
           ad_id: string
           completed: boolean | null
           created_at: string | null
-          device_info: string | null
           earned_amount: number
           id: string
-          ip_address: string | null
           user_id: string
           watch_time: number
         }
@@ -165,10 +163,8 @@ export type Database = {
           ad_id: string
           completed?: boolean | null
           created_at?: string | null
-          device_info?: string | null
           earned_amount: number
           id?: string
-          ip_address?: string | null
           user_id: string
           watch_time: number
         }
@@ -176,10 +172,8 @@ export type Database = {
           ad_id?: string
           completed?: boolean | null
           created_at?: string | null
-          device_info?: string | null
           earned_amount?: number
           id?: string
-          ip_address?: string | null
           user_id?: string
           watch_time?: number
         }
