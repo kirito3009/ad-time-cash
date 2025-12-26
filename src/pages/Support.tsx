@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,25 +11,34 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 
 const supportSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(100, 'Name too long'),
-  email: z.string().trim().email('Invalid email').max(255, 'Email too long'),
   subject: z.string().trim().min(1, 'Subject is required').max(200, 'Subject too long'),
   message: z.string().trim().min(10, 'Message must be at least 10 characters').max(2000, 'Message too long'),
 });
 
 export default function Support() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    name: '',
-    email: user?.email || '',
     subject: '',
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Require authentication
+  useEffect(() => {
+    if (!loading && !user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to contact support.',
+        variant: 'destructive',
+      });
+      navigate('/');
+    }
+  }, [user, loading, navigate, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -42,6 +51,16 @@ export default function Support() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    // Must be authenticated
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'You must be signed in to submit a support message.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Validate
     const result = supportSchema.safeParse(formData);
@@ -61,9 +80,7 @@ export default function Support() {
     const { error } = await supabase
       .from('support_messages')
       .insert({
-        user_id: user?.id || null,
-        name: formData.name,
-        email: formData.email,
+        user_id: user.id,
         subject: formData.subject,
         message: formData.message,
       });
@@ -82,6 +99,15 @@ export default function Support() {
     setIsSubmitted(true);
   };
 
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -94,9 +120,9 @@ export default function Support() {
             Thank you for contacting us. We'll get back to you as soon as possible.
           </p>
           <Button asChild>
-            <Link to={user ? '/dashboard' : '/'}>
+            <Link to="/dashboard">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {user ? 'Back to Dashboard' : 'Back to Home'}
+              Back to Dashboard
             </Link>
           </Button>
         </div>
@@ -111,7 +137,7 @@ export default function Support() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button variant="ghost" asChild>
-              <Link to={user ? '/dashboard' : '/'}>
+              <Link to="/dashboard">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Link>
@@ -139,39 +165,16 @@ export default function Support() {
             <p className="text-muted-foreground">
               We're here to assist you. Send us a message and we'll respond as soon as possible.
             </p>
+            {user && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Sending as: <span className="font-medium text-foreground">{user.email}</span>
+              </p>
+            )}
           </div>
 
           {/* Contact Form */}
           <div className="p-6 sm:p-8 rounded-2xl bg-card shadow-elevated border border-border">
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Your Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="John Doe"
-                    className={errors.name ? 'border-destructive' : ''}
-                  />
-                  {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="john@example.com"
-                    className={errors.email ? 'border-destructive' : ''}
-                  />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject</Label>
                 <Input
