@@ -57,6 +57,8 @@ interface Withdrawal {
   user_id: string;
   user_email?: string;
   user_name?: string;
+  decrypted_method?: string;
+  decrypted_details?: string;
 }
 
 interface SupportMessage {
@@ -201,6 +203,36 @@ export default function Admin() {
     }
     toast({ title: 'Success', description: `Withdrawal ${status}` });
     fetchAllData();
+  };
+
+  const handleDecryptPayment = async (withdrawal: Withdrawal) => {
+    try {
+      // Decrypt payment method
+      const { data: methodData, error: methodError } = await supabase.rpc('decrypt_payment_details', {
+        encrypted_data: withdrawal.payment_method
+      });
+
+      // Decrypt payment details
+      const { data: detailsData, error: detailsError } = await supabase.rpc('decrypt_payment_details', {
+        encrypted_data: withdrawal.payment_details
+      });
+
+      if (methodError || detailsError) {
+        toast({ title: 'Error', description: 'Failed to decrypt payment details', variant: 'destructive' });
+        return;
+      }
+
+      // Update the withdrawal in state with decrypted values
+      setWithdrawals(prev => prev.map(w => 
+        w.id === withdrawal.id 
+          ? { ...w, decrypted_method: methodData, decrypted_details: detailsData }
+          : w
+      ));
+
+      toast({ title: 'Decrypted', description: 'Payment details decrypted successfully' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to decrypt payment details', variant: 'destructive' });
+    }
   };
 
   const handleMessageStatus = async (id: string, status: string) => {
@@ -378,9 +410,29 @@ export default function Admin() {
                 {withdrawals.map(w => (
                   <div key={w.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-muted/50">
                     <div>
-                      <p className="font-medium">₹{Number(w.amount).toFixed(2)} via {w.payment_method || 'N/A'}</p>
-                      <p className="text-sm text-muted-foreground">{w.user_email || 'Unknown'} • {w.payment_details || 'N/A'}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium">₹{Number(w.amount).toFixed(2)}</p>
+                        {w.decrypted_method ? (
+                          <span className="text-sm text-primary">via {w.decrypted_method}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">via [encrypted]</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {w.user_email || 'Unknown'} • {w.decrypted_details || '[encrypted]'}
+                      </p>
                       <p className="text-xs text-muted-foreground">{w.created_at ? new Date(w.created_at).toLocaleString() : 'N/A'}</p>
+                      {!w.decrypted_method && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => handleDecryptPayment(w)}
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          Decrypt Payment Info
+                        </Button>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {w.status === 'pending' ? (
