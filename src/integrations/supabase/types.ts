@@ -105,35 +105,29 @@ export type Database = {
         Row: {
           admin_reply: string | null
           created_at: string | null
-          email: string
           id: string
           message: string
-          name: string
           status: string | null
           subject: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           admin_reply?: string | null
           created_at?: string | null
-          email: string
           id?: string
           message: string
-          name: string
           status?: string | null
           subject: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           admin_reply?: string | null
           created_at?: string | null
-          email?: string
           id?: string
           message?: string
-          name?: string
           status?: string | null
           subject?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -247,6 +241,13 @@ export type Database = {
       encrypt_payment_details: {
         Args: { payment_data: string }
         Returns: string
+      }
+      get_support_message_sender_info: {
+        Args: { _user_id: string }
+        Returns: {
+          email: string
+          full_name: string
+        }[]
       }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       has_role: {

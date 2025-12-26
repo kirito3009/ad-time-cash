@@ -63,12 +63,13 @@ interface Withdrawal {
 
 interface SupportMessage {
   id: string;
-  name: string;
-  email: string;
+  user_id: string;
   subject: string;
   message: string;
   status: string;
   created_at: string;
+  sender_name?: string;
+  sender_email?: string;
 }
 
 interface AppSettings {
@@ -161,9 +162,23 @@ export default function Admin() {
       setWithdrawals(withdrawalsWithProfiles);
     }
 
-    // Fetch messages
+    // Fetch messages and get sender info via secure RPC
     const { data: messagesData } = await supabase.from('support_messages').select('*').order('created_at', { ascending: false });
-    if (messagesData) setMessages(messagesData);
+    if (messagesData) {
+      // Fetch sender info for each message via secure RPC function
+      const messagesWithSenderInfo = await Promise.all(
+        messagesData.map(async (message) => {
+          const { data: senderInfo } = await supabase.rpc('get_support_message_sender_info', { _user_id: message.user_id });
+          const sender = senderInfo?.[0];
+          return {
+            ...message,
+            sender_name: sender?.full_name || 'Unknown User',
+            sender_email: sender?.email || 'N/A',
+          };
+        })
+      );
+      setMessages(messagesWithSenderInfo);
+    }
 
     // Fetch settings
     const { data: settingsData } = await supabase.from('app_settings').select('key, value');
@@ -488,7 +503,7 @@ export default function Admin() {
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div>
                         <p className="font-medium">{m.subject}</p>
-                        <p className="text-sm text-muted-foreground">{m.name} • {m.email}</p>
+                        <p className="text-sm text-muted-foreground">{m.sender_name} • {m.sender_email}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {m.status === 'unread' && (
