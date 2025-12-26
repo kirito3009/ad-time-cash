@@ -36,10 +36,12 @@ interface Withdrawal {
   id: string;
   amount: number;
   status: string;
-  payment_method: string;
-  payment_details: string;
-  created_at: string;
-  profiles: { email: string; full_name: string | null } | null;
+  payment_method: string | null;
+  payment_details: string | null;
+  created_at: string | null;
+  user_id: string;
+  user_email?: string;
+  user_name?: string;
 }
 
 interface SupportMessage {
@@ -98,12 +100,30 @@ export default function Admin() {
     const { data: adsData } = await supabase.from('ads').select('*').order('created_at', { ascending: false });
     if (adsData) setAds(adsData);
 
-    // Fetch withdrawals with profiles
+    // Fetch withdrawals
     const { data: withdrawalsData } = await supabase
       .from('withdrawals')
-      .select('*, profiles:user_id(email, full_name)')
+      .select('*')
       .order('created_at', { ascending: false });
-    if (withdrawalsData) setWithdrawals(withdrawalsData as Withdrawal[]);
+    
+    if (withdrawalsData) {
+      // Fetch profile emails for each withdrawal
+      const userIds = [...new Set(withdrawalsData.map(w => w.user_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+      
+      const profileMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      
+      const withdrawalsWithProfiles = withdrawalsData.map(w => ({
+        ...w,
+        user_email: profileMap.get(w.user_id)?.email,
+        user_name: profileMap.get(w.user_id)?.full_name,
+      }));
+      
+      setWithdrawals(withdrawalsWithProfiles);
+    }
 
     // Fetch messages
     const { data: messagesData } = await supabase.from('support_messages').select('*').order('created_at', { ascending: false });
@@ -335,9 +355,9 @@ export default function Admin() {
                 {withdrawals.map(w => (
                   <div key={w.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-muted/50">
                     <div>
-                      <p className="font-medium">₹{Number(w.amount).toFixed(2)} via {w.payment_method}</p>
-                      <p className="text-sm text-muted-foreground">{w.profiles?.email} • {w.payment_details}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(w.created_at).toLocaleString()}</p>
+                      <p className="font-medium">₹{Number(w.amount).toFixed(2)} via {w.payment_method || 'N/A'}</p>
+                      <p className="text-sm text-muted-foreground">{w.user_email || 'Unknown'} • {w.payment_details || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">{w.created_at ? new Date(w.created_at).toLocaleString() : 'N/A'}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {w.status === 'pending' ? (
