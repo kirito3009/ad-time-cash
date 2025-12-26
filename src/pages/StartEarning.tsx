@@ -140,7 +140,6 @@ export default function StartEarning() {
         watch_time: watchTime,
         earned_amount: finalEarned,
         completed,
-        device_info: navigator.userAgent,
       });
 
     if (error) {
