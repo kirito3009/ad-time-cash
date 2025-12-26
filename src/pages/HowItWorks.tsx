@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
+import { AuthModal } from '@/components/AuthModal';
 import { ArrowLeft, Play, LogIn, Eye, DollarSign, Wallet, CheckCircle, Shield, Clock, AlertTriangle } from 'lucide-react';
 
 export default function HowItWorks() {
-  const { user, signInWithGoogle } = useAuth();
+  const { user } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,8 +58,8 @@ export default function HowItWorks() {
               <Step
                 number={1}
                 icon={<LogIn className="w-5 h-5" />}
-                title="Sign in with Google"
-                description="Create your account instantly using your Google account. No forms, no hassle."
+                title="Create an Account"
+                description="Sign up with your email and password. It's free and takes just seconds."
               />
               <Step
                 number={2}
@@ -147,7 +150,7 @@ export default function HowItWorks() {
           {!user && (
             <div className="text-center py-8 border-t border-border">
               <h2 className="text-2xl font-heading font-bold text-foreground mb-4">Ready to Start Earning?</h2>
-              <Button size="lg" onClick={() => signInWithGoogle()}>
+              <Button size="lg" onClick={() => setAuthModalOpen(true)}>
                 <Play className="w-5 h-5 mr-2" />
                 Get Started Now
               </Button>
@@ -162,6 +165,8 @@ export default function HowItWorks() {
           <p>© 2024 AdsEarn. All rights reserved.</p>
         </div>
       </footer>
+
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );
 }
