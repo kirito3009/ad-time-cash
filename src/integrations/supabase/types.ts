@@ -243,6 +243,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrypt_payment_details: {
+        Args: { encrypted_data: string }
+        Returns: string
+      }
+      encrypt_payment_details: {
+        Args: { payment_data: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
