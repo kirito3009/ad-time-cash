@@ -80,7 +80,6 @@ export default function StartEarning() {
       .eq('is_active', true);
 
     if (error) {
-      console.error('Error fetching ads:', error);
       return;
     }
 
@@ -145,7 +144,6 @@ export default function StartEarning() {
       });
 
     if (error) {
-      console.error('Error saving watch history:', error);
       toast({
         title: 'Error',
         description: 'Failed to save your earnings. Please try again.',

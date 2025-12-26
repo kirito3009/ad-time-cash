@@ -50,7 +50,6 @@ export default function Dashboard() {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching profile:', error);
       return;
     }
 
@@ -72,7 +71,6 @@ export default function Dashboard() {
       .gte('created_at', today.toISOString());
 
     if (error) {
-      console.error('Error fetching today stats:', error);
       return;
     }
 
