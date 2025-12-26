@@ -73,7 +73,6 @@ export type Database = {
           ads_watched: number | null
           avatar_url: string | null
           created_at: string | null
-          email: string
           full_name: string | null
           id: string
           total_earnings: number | null
@@ -84,7 +83,6 @@ export type Database = {
           ads_watched?: number | null
           avatar_url?: string | null
           created_at?: string | null
-          email: string
           full_name?: string | null
           id: string
           total_earnings?: number | null
@@ -95,7 +93,6 @@ export type Database = {
           ads_watched?: number | null
           avatar_url?: string | null
           created_at?: string | null
-          email?: string
           full_name?: string | null
           id?: string
           total_earnings?: number | null
@@ -251,6 +248,7 @@ export type Database = {
         Args: { payment_data: string }
         Returns: string
       }
+      get_user_email: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
