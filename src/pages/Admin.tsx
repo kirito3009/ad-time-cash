@@ -12,6 +12,21 @@ import {
   Plus, Trash2, Save, CheckCircle, XCircle, Clock, Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+// Validation schema for app settings
+const settingsSchema = z.object({
+  revenue_share_percent: z.string().refine(val => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 0 && num <= 100;
+  }, { message: 'Revenue share must be between 0 and 100' }),
+  min_withdrawal: z.string().refine(val => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 0 && num <= 100000;
+  }, { message: 'Minimum withdrawal must be between 0 and 100000' }),
+  landing_text: z.string().max(5000, { message: 'Landing text must be less than 5000 characters' }),
+  how_it_works_content: z.string().max(10000, { message: 'How it works content must be less than 10000 characters' }),
+});
 
 interface Profile {
   id: string;
@@ -198,6 +213,14 @@ export default function Admin() {
   };
 
   const handleSaveSettings = async () => {
+    // Validate settings before saving
+    const validationResult = settingsSchema.safeParse(settings);
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(e => e.message).join(', ');
+      toast({ title: 'Validation Error', description: errors, variant: 'destructive' });
+      return;
+    }
+
     for (const [key, value] of Object.entries(settings)) {
       await supabase.from('app_settings').update({ value, updated_at: new Date().toISOString() }).eq('key', key);
     }
