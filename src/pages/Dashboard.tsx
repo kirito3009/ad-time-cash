@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Play, Wallet, HelpCircle, BookOpen, LogOut, Clock, DollarSign, Film, TrendingUp, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AdDisplay } from '@/components/AdDisplay';
 
 interface Profile {
   full_name: string | null;
@@ -235,6 +236,9 @@ export default function Dashboard() {
             variant="outline"
           />
         </div>
+
+        {/* Sponsored Ad */}
+        <AdDisplay placement="dashboard" variant="card" className="mt-8" />
 
         {/* Logout Button */}
         <div className="mt-8 pt-8 border-t border-border">

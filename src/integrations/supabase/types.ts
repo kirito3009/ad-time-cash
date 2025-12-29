@@ -16,28 +16,46 @@ export type Database = {
     Tables: {
       ads: {
         Row: {
+          ad_type: string
           created_at: string | null
+          description: string | null
           duration: number
           id: string
+          image_url: string | null
           is_active: boolean | null
+          link_url: string | null
+          placement: string[]
+          priority: number
           reward_amount: number
           title: string
           video_url: string
         }
         Insert: {
+          ad_type?: string
           created_at?: string | null
+          description?: string | null
           duration: number
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
+          link_url?: string | null
+          placement?: string[]
+          priority?: number
           reward_amount: number
           title: string
           video_url: string
         }
         Update: {
+          ad_type?: string
           created_at?: string | null
+          description?: string | null
           duration?: number
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
+          link_url?: string | null
+          placement?: string[]
+          priority?: number
           reward_amount?: number
           title?: string
           video_url?: string
