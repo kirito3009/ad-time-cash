@@ -9,10 +9,11 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import {
   ArrowLeft, Play, Settings, Users, Film, DollarSign, MessageCircle,
-  Plus, Trash2, Save, CheckCircle, XCircle, Clock, Eye
+  Save, CheckCircle, XCircle, Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import { AdvertisementDashboard } from '@/components/admin/AdvertisementDashboard';
 
 // Validation schema for app settings
 const settingsSchema = z.object({
@@ -41,10 +42,17 @@ interface Profile {
 interface Ad {
   id: string;
   title: string;
+  ad_type: string;
   video_url: string;
+  image_url: string | null;
+  link_url: string | null;
+  description: string | null;
   duration: number;
   reward_amount: number;
+  placement: string[];
+  priority: number;
   is_active: boolean;
+  created_at: string;
 }
 
 interface Withdrawal {
@@ -352,54 +360,7 @@ export default function Admin() {
 
           {/* Ads Tab */}
           <TabsContent value="ads" className="space-y-6">
-            <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
-              <h2 className="text-xl font-heading font-semibold mb-4">Add New Ad</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input value={newAd.title} onChange={e => setNewAd(prev => ({ ...prev, title: e.target.value }))} placeholder="Ad title" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Video URL</Label>
-                  <Input value={newAd.video_url} onChange={e => setNewAd(prev => ({ ...prev, video_url: e.target.value }))} placeholder="https://..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>Duration (seconds)</Label>
-                  <Input type="number" value={newAd.duration} onChange={e => setNewAd(prev => ({ ...prev, duration: Number(e.target.value) }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Reward (₹)</Label>
-                  <Input type="number" step="0.01" value={newAd.reward_amount} onChange={e => setNewAd(prev => ({ ...prev, reward_amount: Number(e.target.value) }))} />
-                </div>
-              </div>
-              <Button onClick={handleAddAd}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Ad
-              </Button>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
-              <h2 className="text-xl font-heading font-semibold mb-4">Manage Ads ({ads.length})</h2>
-              <div className="space-y-3">
-                {ads.map(ad => (
-                  <div key={ad.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
-                    <div>
-                      <p className="font-medium">{ad.title}</p>
-                      <p className="text-sm text-muted-foreground">{ad.duration}s • ₹{Number(ad.reward_amount).toFixed(4)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant={ad.is_active ? 'default' : 'outline'} size="sm" onClick={() => handleToggleAd(ad.id, ad.is_active)}>
-                        {ad.is_active ? 'Active' : 'Inactive'}
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDeleteAd(ad.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {ads.length === 0 && <p className="text-muted-foreground text-center py-8">No ads yet</p>}
-              </div>
-            </div>
+            <AdvertisementDashboard ads={ads} onRefresh={fetchAllData} />
           </TabsContent>
 
           {/* Users Tab */}

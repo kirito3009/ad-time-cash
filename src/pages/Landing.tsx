@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import { AuthModal } from '@/components/AuthModal';
 import { Play, TrendingUp, Shield, Clock, DollarSign, Users, Mail } from 'lucide-react';
+import { AdDisplay } from '@/components/AdDisplay';
 
 export default function Landing() {
   const { user, loading } = useAuth();
@@ -150,6 +151,11 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Sponsored Banner */}
+      <div className="container mx-auto px-4 py-6">
+        <AdDisplay placement="home" variant="banner" />
+      </div>
 
       {/* CTA Section */}
       <section className="py-20 relative overflow-hidden">
