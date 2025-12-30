@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Play, ArrowLeft, AlertCircle, CheckCircle, Clock, DollarSign, Pause, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { PageScriptBlock } from '@/components/PageScriptBlock';
 
 interface Ad {
   id: string;
@@ -347,6 +348,9 @@ export default function StartEarning() {
             )}
           </div>
         )}
+
+        {/* Custom Ad Script Block */}
+        <PageScriptBlock settingKey="watch_page_script" className="mt-8" />
       </main>
     </div>
   );
