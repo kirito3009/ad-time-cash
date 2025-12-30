@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Play, Wallet, HelpCircle, BookOpen, LogOut, Clock, DollarSign, Film, TrendingUp, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AdDisplay } from '@/components/AdDisplay';
+import { PageScriptBlock } from '@/components/PageScriptBlock';
 
 interface Profile {
   full_name: string | null;
@@ -239,6 +240,9 @@ export default function Dashboard() {
 
         {/* Sponsored Ad */}
         <AdDisplay placement="dashboard" variant="card" className="mt-8" />
+
+        {/* Custom Ad Script Block */}
+        <PageScriptBlock settingKey="dashboard_page_script" className="mt-8" />
 
         {/* Logout Button */}
         <div className="mt-8 pt-8 border-t border-border">

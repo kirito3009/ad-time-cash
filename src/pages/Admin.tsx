@@ -27,6 +27,10 @@ const settingsSchema = z.object({
   }, { message: 'Minimum withdrawal must be between 0 and 100000' }),
   landing_text: z.string().max(5000, { message: 'Landing text must be less than 5000 characters' }),
   how_it_works_content: z.string().max(10000, { message: 'How it works content must be less than 10000 characters' }),
+  global_head_script: z.string().max(50000, { message: 'Global head script must be less than 50000 characters' }),
+  home_page_script: z.string().max(50000, { message: 'Home page script must be less than 50000 characters' }),
+  dashboard_page_script: z.string().max(50000, { message: 'Dashboard page script must be less than 50000 characters' }),
+  watch_page_script: z.string().max(50000, { message: 'Watch page script must be less than 50000 characters' }),
 });
 
 interface Profile {
@@ -85,6 +89,10 @@ interface AppSettings {
   min_withdrawal: string;
   landing_text: string;
   how_it_works_content: string;
+  global_head_script: string;
+  home_page_script: string;
+  dashboard_page_script: string;
+  watch_page_script: string;
 }
 
 export default function Admin() {
@@ -101,6 +109,10 @@ export default function Admin() {
     min_withdrawal: '100',
     landing_text: '',
     how_it_works_content: '',
+    global_head_script: '',
+    home_page_script: '',
+    dashboard_page_script: '',
+    watch_page_script: '',
   });
 
   const [newAd, setNewAd] = useState({ title: '', video_url: '', duration: 30, reward_amount: 0.01 });
@@ -492,48 +504,122 @@ export default function Admin() {
 
           {/* Settings Tab */}
           <TabsContent value="settings">
-            <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
-              <h2 className="text-xl font-heading font-semibold mb-6">App Settings</h2>
-              <div className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-6">
+              {/* General Settings */}
+              <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
+                <h2 className="text-xl font-heading font-semibold mb-6">General Settings</h2>
+                <div className="space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Revenue Share (%)</Label>
+                      <Input
+                        type="number"
+                        value={settings.revenue_share_percent}
+                        onChange={e => setSettings(prev => ({ ...prev, revenue_share_percent: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Minimum Withdrawal (₹)</Label>
+                      <Input
+                        type="number"
+                        value={settings.min_withdrawal}
+                        onChange={e => setSettings(prev => ({ ...prev, min_withdrawal: e.target.value }))}
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label>Revenue Share (%)</Label>
-                    <Input
-                      type="number"
-                      value={settings.revenue_share_percent}
-                      onChange={e => setSettings(prev => ({ ...prev, revenue_share_percent: e.target.value }))}
+                    <Label>Landing Page Text</Label>
+                    <Textarea
+                      value={settings.landing_text}
+                      onChange={e => setSettings(prev => ({ ...prev, landing_text: e.target.value }))}
+                      rows={3}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Minimum Withdrawal (₹)</Label>
-                    <Input
-                      type="number"
-                      value={settings.min_withdrawal}
-                      onChange={e => setSettings(prev => ({ ...prev, min_withdrawal: e.target.value }))}
+                    <Label>How It Works Content</Label>
+                    <Textarea
+                      value={settings.how_it_works_content}
+                      onChange={e => setSettings(prev => ({ ...prev, how_it_works_content: e.target.value }))}
+                      rows={5}
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Landing Page Text</Label>
-                  <Textarea
-                    value={settings.landing_text}
-                    onChange={e => setSettings(prev => ({ ...prev, landing_text: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>How It Works Content</Label>
-                  <Textarea
-                    value={settings.how_it_works_content}
-                    onChange={e => setSettings(prev => ({ ...prev, how_it_works_content: e.target.value }))}
-                    rows={5}
-                  />
-                </div>
-                <Button onClick={handleSaveSettings}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Settings
-                </Button>
               </div>
+
+              {/* Ad Scripts Section */}
+              <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
+                <h2 className="text-xl font-heading font-semibold mb-2">Ad Scripts & Custom Code</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Paste your Adsterra or other ad network scripts here. Scripts support &lt;script&gt; tags and will execute properly.
+                </p>
+                
+                <div className="space-y-6">
+                  {/* Global Head Script */}
+                  <div className="space-y-2 p-4 rounded-xl bg-muted/50 border border-border">
+                    <Label className="text-base font-semibold">Global Head Code (Site-wide)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      This code will be injected into the &lt;head&gt; tag on ALL pages. Use for site-wide tracking, analytics, or ad scripts.
+                    </p>
+                    <Textarea
+                      value={settings.global_head_script}
+                      onChange={e => setSettings(prev => ({ ...prev, global_head_script: e.target.value }))}
+                      rows={6}
+                      placeholder={'<script type="text/javascript">\n  // Your global ad script here\n</script>'}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+
+                  {/* Page-Specific Scripts */}
+                  <div className="grid gap-4">
+                    <div className="space-y-2 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                      <Label className="text-base font-semibold">Home Page Script</Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Script/HTML for the Landing/Home page only.
+                      </p>
+                      <Textarea
+                        value={settings.home_page_script}
+                        onChange={e => setSettings(prev => ({ ...prev, home_page_script: e.target.value }))}
+                        rows={5}
+                        placeholder={'<script type="text/javascript">\n  // Home page ad script\n</script>'}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-2 p-4 rounded-xl bg-accent/5 border border-accent/20">
+                      <Label className="text-base font-semibold">Dashboard Page Script</Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Script/HTML for the Dashboard page only.
+                      </p>
+                      <Textarea
+                        value={settings.dashboard_page_script}
+                        onChange={e => setSettings(prev => ({ ...prev, dashboard_page_script: e.target.value }))}
+                        rows={5}
+                        placeholder={'<script type="text/javascript">\n  // Dashboard ad script\n</script>'}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-2 p-4 rounded-xl bg-secondary/5 border border-secondary/20">
+                      <Label className="text-base font-semibold">Watch Ads Page Script</Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Script/HTML for the Start Earning/Watch Ads page only.
+                      </p>
+                      <Textarea
+                        value={settings.watch_page_script}
+                        onChange={e => setSettings(prev => ({ ...prev, watch_page_script: e.target.value }))}
+                        rows={5}
+                        placeholder={'<script type="text/javascript">\n  // Watch page ad script\n</script>'}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={handleSaveSettings} size="lg">
+                <Save className="w-4 h-4 mr-2" />
+                Save All Settings
+              </Button>
             </div>
           </TabsContent>
         </Tabs>

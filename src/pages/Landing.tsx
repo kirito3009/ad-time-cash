@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { AuthModal } from '@/components/AuthModal';
 import { Play, TrendingUp, Shield, Clock, DollarSign, Users, Mail } from 'lucide-react';
 import { AdDisplay } from '@/components/AdDisplay';
+import { PageScriptBlock } from '@/components/PageScriptBlock';
 
 export default function Landing() {
   const { user, loading } = useAuth();
@@ -198,6 +199,9 @@ export default function Landing() {
       </footer>
 
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      
+      {/* Custom Ad Script Block */}
+      <PageScriptBlock settingKey="home_page_script" className="container mx-auto px-4 py-4" />
     </div>
   );
 }
