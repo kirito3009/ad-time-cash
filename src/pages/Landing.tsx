@@ -154,9 +154,15 @@ export default function Landing() {
       </section>
 
       {/* Sponsored Banner */}
-      <div className="container mx-auto px-4 py-6">
+      <section className="container mx-auto px-4 py-6" aria-label="Sponsored">
         <AdDisplay placement="home" variant="banner" />
-      </div>
+
+        {/* Custom Ad Script Block (Ad network HTML/JS) */}
+        <div className="mt-6 rounded-2xl bg-card shadow-card border border-border p-4 min-h-[90px]">
+          <h2 className="sr-only">Sponsored content</h2>
+          <PageScriptBlock settingKey="home_page_script" />
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-20 relative overflow-hidden">
@@ -199,9 +205,6 @@ export default function Landing() {
       </footer>
 
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
-      
-      {/* Custom Ad Script Block */}
-      <PageScriptBlock settingKey="home_page_script" className="container mx-auto px-4 py-4" />
     </div>
   );
 }
