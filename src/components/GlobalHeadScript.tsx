@@ -10,7 +10,7 @@ function copyAttributes(from: Element, to: HTMLElement) {
 }
 
 function escapeAttrValue(value: string) {
-  return value.replaceAll('"', '\\"');
+  return value.split('"').join('\\"');
 }
 
 export function GlobalHeadScript() {
