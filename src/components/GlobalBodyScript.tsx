@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { X } from 'lucide-react';
 
 export function GlobalBodyScript() {
   const [script, setScript] = useState<string>('');
+  const [isVisible, setIsVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,13 +59,21 @@ export function GlobalBodyScript() {
     });
   }, [script]);
 
-  if (!script) return null;
+  if (!script || !isVisible) return null;
 
   return (
     <div 
-      ref={containerRef} 
       className="global-body-script fixed bottom-0 left-0 right-0 z-50"
       data-script-key="global_body_script"
-    />
+    >
+      <button
+        onClick={() => setIsVisible(false)}
+        className="absolute top-1 right-1 z-[60] w-6 h-6 flex items-center justify-center bg-black/70 hover:bg-black/90 text-white rounded-full transition-colors"
+        aria-label="Close ad"
+      >
+        <X className="w-4 h-4" />
+      </button>
+      <div ref={containerRef} />
+    </div>
   );
 }

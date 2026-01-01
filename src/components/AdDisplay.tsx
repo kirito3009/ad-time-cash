@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ExternalLink, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface Ad {
   id: string;
@@ -28,6 +27,13 @@ interface AdDisplayProps {
 export function AdDisplay({ placement, variant = 'card', className = '', maxAds = 1, onClose }: AdDisplayProps) {
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hiddenAds, setHiddenAds] = useState<Set<string>>(new Set());
+
+  const hideAd = (adId: string) => {
+    setHiddenAds(prev => new Set([...prev, adId]));
+  };
+
+  const visibleAds = ads.filter(ad => !hiddenAds.has(ad.id));
 
   useEffect(() => {
     fetchAds();
@@ -52,7 +58,7 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
     setLoading(false);
   };
 
-  if (loading || ads.length === 0) {
+  if (loading || visibleAds.length === 0) {
     return null;
   }
 
@@ -154,14 +160,29 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
     return null;
   };
 
+  // Close button component for ads
+  const CloseButton = ({ adId }: { adId: string }) => (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        hideAd(adId);
+      }}
+      className="absolute top-1 right-1 z-10 w-5 h-5 flex items-center justify-center bg-black/70 hover:bg-black/90 text-white rounded-full transition-colors"
+      aria-label="Close ad"
+    >
+      <X className="w-3 h-3" />
+    </button>
+  );
+
   // Banner variant - full width horizontal
   if (variant === 'banner') {
     return (
       <div className={`w-full ${className}`}>
-        {ads.map(ad => (
+        {visibleAds.map(ad => (
           <div key={ad.id} className="relative">
+            <CloseButton adId={ad.id} />
             {renderAd(ad)}
-            <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/50 text-white text-[10px] rounded">
+            <span className="absolute top-1 left-8 px-1.5 py-0.5 bg-black/50 text-white text-[10px] rounded">
               Ad
             </span>
           </div>
@@ -175,15 +196,14 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
         <div className={`relative max-w-lg w-full bg-card rounded-2xl shadow-elevated overflow-hidden ${className}`}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white"
+          <button
             onClick={onClose}
+            className="absolute top-2 right-2 z-10 w-6 h-6 flex items-center justify-center bg-black/70 hover:bg-black/90 text-white rounded-full transition-colors"
+            aria-label="Close ad"
           >
             <X className="w-4 h-4" />
-          </Button>
-          {ads.map(ad => (
+          </button>
+          {visibleAds.map(ad => (
             <div key={ad.id}>
               {renderAd(ad)}
             </div>
@@ -200,10 +220,11 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
   if (variant === 'inline') {
     return (
       <div className={`space-y-3 ${className}`}>
-        {ads.map(ad => (
+        {visibleAds.map(ad => (
           <div key={ad.id} className="relative">
+            <CloseButton adId={ad.id} />
             {renderAd(ad)}
-            <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/50 text-white text-[10px] rounded">
+            <span className="absolute top-1 left-8 px-1.5 py-0.5 bg-black/50 text-white text-[10px] rounded">
               Ad
             </span>
           </div>
@@ -219,8 +240,9 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
         <span className="text-xs text-muted-foreground uppercase tracking-wider">Sponsored</span>
       </div>
       <div className="space-y-3">
-        {ads.map(ad => (
-          <div key={ad.id}>
+        {visibleAds.map(ad => (
+          <div key={ad.id} className="relative">
+            <CloseButton adId={ad.id} />
             {renderAd(ad)}
           </div>
         ))}
