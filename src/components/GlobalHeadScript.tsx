@@ -22,7 +22,7 @@ export function GlobalHeadScript() {
         .from('app_settings')
         .select('value')
         .eq('key', 'global_head_script')
-        .single();
+        .maybeSingle();
 
       if (data?.value) {
         setScript(data.value);

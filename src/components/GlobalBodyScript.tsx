@@ -13,7 +13,7 @@ export function GlobalBodyScript() {
         .from('app_settings')
         .select('value')
         .eq('key', 'global_body_script')
-        .single();
+        .maybeSingle();
 
       if (data?.value) {
         setScript(data.value);
