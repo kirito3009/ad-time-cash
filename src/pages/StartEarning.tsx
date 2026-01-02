@@ -195,34 +195,35 @@ export default function StartEarning() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" asChild>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm px-2 sm:px-3">
               <Link to="/dashboard">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Back</span>
               </Link>
             </Button>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="w-4 h-4 text-accent" />
-                <span className="font-medium">Session: ₹{sessionEarnings.toFixed(4)}</span>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-accent" />
+                <span className="font-medium">₹{sessionEarnings.toFixed(2)}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Play className="w-4 h-4 text-primary" />
-                <span className="font-medium">{adsWatchedSession} ads</span>
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Play className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                <span className="font-medium">{adsWatchedSession} <span className="hidden xs:inline">ads</span></span>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Tab Status Warning */}
         {!isTabActive && (
-          <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-3">
-            <EyeOff className="w-5 h-5 text-destructive" />
-            <p className="text-destructive font-medium">Video paused - Please stay on this tab to continue earning</p>
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 sm:gap-3">
+            <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-destructive flex-shrink-0" />
+            <p className="text-destructive font-medium text-sm sm:text-base">Video paused - Stay on this tab to earn</p>
           </div>
         )}
 

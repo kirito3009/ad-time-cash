@@ -119,31 +119,31 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-                <Play className="w-5 h-5 text-primary-foreground fill-current" />
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground fill-current" />
               </div>
-              <span className="text-xl font-heading font-bold text-foreground">
+              <span className="text-lg sm:text-xl font-heading font-bold text-foreground">
                 Ads<span className="text-gradient">Earn</span>
               </span>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {isAdmin && (
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm px-2 sm:px-3">
                   <Link to="/admin">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Admin
+                    <Settings className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Admin</span>
                   </Link>
                 </Button>
               )}
               <div className="flex items-center gap-2">
                 {profile?.avatar_url && (
-                  <img src={profile.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
+                  <img src={profile.avatar_url} alt="Avatar" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full" />
                 )}
-                <span className="hidden sm:block text-sm font-medium text-foreground">
+                <span className="hidden md:block text-sm font-medium text-foreground truncate max-w-[150px]">
                   {profile?.full_name || user?.email}
                 </span>
               </div>
@@ -153,17 +153,17 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Welcome Section */}
-        <div className="mb-8 animate-slide-up">
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground mb-2">
+        <div className="mb-6 sm:mb-8 animate-slide-up">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-bold text-foreground mb-1 sm:mb-2">
             Welcome back, <span className="text-gradient">{profile?.full_name?.split(' ')[0] || 'User'}</span>!
           </h1>
-          <p className="text-muted-foreground">Here's your earnings overview</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Here's your earnings overview</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <StatCard
             icon={<Film className="w-5 h-5" />}
             label="Total Ads Watched"
@@ -192,22 +192,22 @@ export default function Dashboard() {
         </div>
 
         {/* Today's Earnings Card */}
-        <div className="mb-8 p-6 rounded-2xl bg-card shadow-card border border-border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Today's Earnings</p>
-              <p className="text-3xl font-heading font-bold text-gradient-gold">
+        <div className="mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl bg-card shadow-card border border-border">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-1">Today's Earnings</p>
+              <p className="text-2xl sm:text-3xl font-heading font-bold text-gradient-gold truncate">
                 ₹{todayStats.earnings.toFixed(4)}
               </p>
             </div>
-            <div className="w-16 h-16 rounded-2xl gradient-gold flex items-center justify-center shadow-gold">
-              <DollarSign className="w-8 h-8 text-accent-foreground" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl gradient-gold flex items-center justify-center shadow-gold flex-shrink-0">
+              <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-accent-foreground" />
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <ActionButton
             icon={<Play className="w-6 h-6" />}
             label="Start Earning"
@@ -265,12 +265,12 @@ function StatCard({ icon, label, value, color, highlight }: { icon: React.ReactN
   };
 
   return (
-    <div className={`p-5 rounded-2xl bg-card shadow-card border border-border ${highlight ? 'ring-2 ring-accent' : ''} animate-scale-in`}>
-      <div className={`w-10 h-10 rounded-xl ${colorClasses[color]} flex items-center justify-center mb-3`}>
+    <div className={`p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-card shadow-card border border-border ${highlight ? 'ring-2 ring-accent' : ''} animate-scale-in`}>
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${colorClasses[color]} flex items-center justify-center mb-2 sm:mb-3`}>
         {icon}
       </div>
-      <p className="text-sm text-muted-foreground mb-1">{label}</p>
-      <p className={`text-2xl font-heading font-bold ${highlight ? 'text-gradient-gold' : 'text-foreground'}`}>
+      <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 line-clamp-1">{label}</p>
+      <p className={`text-lg sm:text-2xl font-heading font-bold ${highlight ? 'text-gradient-gold' : 'text-foreground'} truncate`}>
         {value}
       </p>
     </div>
@@ -288,12 +288,12 @@ function ActionButton({ icon, label, description, to, variant }: { icon: React.R
   return (
     <Link
       to={to}
-      className={`flex items-center gap-4 p-5 rounded-2xl ${variantClasses[variant]} transition-all duration-200 hover:scale-105 hover:shadow-elevated`}
+      className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-5 rounded-xl sm:rounded-2xl ${variantClasses[variant]} transition-all duration-200 hover:scale-105 hover:shadow-elevated`}
     >
-      <div className="flex-shrink-0">{icon}</div>
-      <div>
-        <p className="font-heading font-semibold">{label}</p>
-        <p className="text-sm opacity-80">{description}</p>
+      <div className="flex-shrink-0 [&>svg]:w-5 [&>svg]:h-5 sm:[&>svg]:w-6 sm:[&>svg]:h-6">{icon}</div>
+      <div className="min-w-0">
+        <p className="font-heading font-semibold text-sm sm:text-base truncate">{label}</p>
+        <p className="text-xs sm:text-sm opacity-80 truncate">{description}</p>
       </div>
     </Link>
   );
