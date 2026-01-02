@@ -216,52 +216,52 @@ export default function Wallet() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground mb-8 flex items-center gap-3">
-            <WalletIcon className="w-8 h-8 text-primary" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-bold text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
+            <WalletIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             Your Wallet
           </h1>
 
           {/* Balance Cards */}
-          <div className="grid sm:grid-cols-3 gap-4 mb-8">
-            <div className="p-5 rounded-2xl bg-card shadow-card border border-border">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-primary" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-card shadow-card border border-border">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
-                <span className="text-sm text-muted-foreground">Today's Earnings</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">Today's Earnings</span>
               </div>
-              <p className="text-2xl font-heading font-bold text-foreground">₹{todayEarnings.toFixed(2)}</p>
+              <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">₹{todayEarnings.toFixed(2)}</p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-card shadow-card border border-border">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl gradient-gold flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-accent-foreground" />
+            <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-card shadow-card border border-border">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl gradient-gold flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-accent-foreground" />
                 </div>
-                <span className="text-sm text-muted-foreground">Total Earnings</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">Total Earnings</span>
               </div>
-              <p className="text-2xl font-heading font-bold text-gradient-gold">₹{(profile?.total_earnings || 0).toFixed(2)}</p>
+              <p className="text-xl sm:text-2xl font-heading font-bold text-gradient-gold">₹{(profile?.total_earnings || 0).toFixed(2)}</p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-card shadow-card border border-border">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-accent-foreground" />
+            <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-card shadow-card border border-border">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-accent/20 flex items-center justify-center">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-accent-foreground" />
                 </div>
-                <span className="text-sm text-muted-foreground">Pending Withdrawals</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">Pending</span>
               </div>
-              <p className="text-2xl font-heading font-bold text-foreground">₹{pendingAmount.toFixed(2)}</p>
+              <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">₹{pendingAmount.toFixed(2)}</p>
             </div>
           </div>
 
           {/* Withdrawal Form */}
-          <div className="p-6 rounded-2xl bg-card shadow-card border border-border mb-8">
-            <h2 className="text-xl font-heading font-semibold text-foreground mb-2">Request Withdrawal</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Available balance: <span className="font-semibold text-primary">₹{availableBalance.toFixed(2)}</span>
-              {' • '}Minimum withdrawal: ₹{minWithdrawal}
+          <div className="p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-card shadow-card border border-border mb-6 sm:mb-8">
+            <h2 className="text-lg sm:text-xl font-heading font-semibold text-foreground mb-1 sm:mb-2">Request Withdrawal</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
+              Available: <span className="font-semibold text-primary">₹{availableBalance.toFixed(2)}</span>
+              {' • '}Min: ₹{minWithdrawal}
             </p>
 
             {availableBalance < minWithdrawal ? (
@@ -317,28 +317,28 @@ export default function Wallet() {
           </div>
 
           {/* Withdrawal History */}
-          <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
-            <h2 className="text-xl font-heading font-semibold text-foreground mb-4">Withdrawal History</h2>
+          <div className="p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-card shadow-card border border-border">
+            <h2 className="text-lg sm:text-xl font-heading font-semibold text-foreground mb-3 sm:mb-4">History</h2>
             
             {withdrawals.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No withdrawal requests yet</p>
+              <p className="text-muted-foreground text-center py-6 sm:py-8 text-sm sm:text-base">No withdrawal requests yet</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {withdrawals.map((withdrawal) => (
                   <div
                     key={withdrawal.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-muted/50"
+                    className="flex items-center justify-between gap-3 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-muted/50"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                       {getStatusIcon(withdrawal.status)}
-                      <div>
-                        <p className="font-medium text-foreground">₹{Number(withdrawal.amount).toFixed(2)}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground text-sm sm:text-base">₹{Number(withdrawal.amount).toFixed(2)}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
                           {withdrawal.payment_method} • {new Date(withdrawal.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(withdrawal.status)}`}>
+                    <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium capitalize flex-shrink-0 ${getStatusColor(withdrawal.status)}`}>
                       {withdrawal.status}
                     </span>
                   </div>
