@@ -16,7 +16,7 @@ export function PageScriptBlock({ settingKey, className = '' }: PageScriptBlockP
         .from('app_settings')
         .select('value')
         .eq('key', settingKey)
-        .single();
+        .maybeSingle();
 
       if (data?.value) {
         setScript(data.value);
