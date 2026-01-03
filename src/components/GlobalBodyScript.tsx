@@ -63,17 +63,17 @@ export function GlobalBodyScript() {
 
   return (
     <div 
-      className="global-body-script fixed bottom-0 left-0 right-0 z-50"
+      className="global-body-script fixed bottom-0 left-0 right-0 z-50 max-h-16 sm:max-h-24 md:max-h-32 overflow-hidden"
       data-script-key="global_body_script"
     >
       <button
         onClick={() => setIsVisible(false)}
-        className="absolute top-1 right-1 z-[60] w-6 h-6 flex items-center justify-center bg-black/70 hover:bg-black/90 text-white rounded-full transition-colors"
+        className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 z-[60] w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center bg-black/70 hover:bg-black/90 text-white rounded-full transition-colors"
         aria-label="Close ad"
       >
-        <X className="w-4 h-4" />
+        <X className="w-3 h-3 sm:w-4 sm:h-4" />
       </button>
-      <div ref={containerRef} />
+      <div ref={containerRef} className="[&_img]:max-h-16 sm:[&_img]:max-h-24 md:[&_img]:max-h-32 [&_img]:object-cover [&_iframe]:max-h-16 sm:[&_iframe]:max-h-24 md:[&_iframe]:max-h-32" />
     </div>
   );
 }

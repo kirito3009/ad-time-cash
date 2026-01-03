@@ -73,7 +73,7 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
     
     if (ad.ad_type === 'video') {
       return (
-        <div className="relative aspect-video bg-foreground/5 rounded-lg overflow-hidden">
+        <div className="relative aspect-video max-h-32 sm:max-h-48 md:max-h-none bg-foreground/5 rounded-lg overflow-hidden">
           <video
             src={ad.video_url}
             className="w-full h-full object-cover"
@@ -83,8 +83,8 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
             playsInline
           />
           {ad.description && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-              <p className="text-white text-sm">{ad.description}</p>
+            <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/80 to-transparent">
+              <p className="text-white text-xs sm:text-sm line-clamp-1 sm:line-clamp-2">{ad.description}</p>
             </div>
           )}
         </div>
@@ -94,22 +94,22 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
     if (ad.ad_type === 'image' && ad.image_url) {
       return (
         <div
-          className={`relative overflow-hidden rounded-lg ${isClickable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+          className={`relative overflow-hidden rounded-lg max-h-28 sm:max-h-40 md:max-h-none ${isClickable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
           onClick={() => handleAdClick(ad)}
         >
           <img
             src={ad.image_url}
             alt={ad.title}
-            className="w-full h-auto object-cover"
+            className="w-full h-full object-cover"
           />
           {ad.description && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-              <p className="text-white text-sm">{ad.description}</p>
+            <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/80 to-transparent">
+              <p className="text-white text-xs sm:text-sm line-clamp-1">{ad.description}</p>
             </div>
           )}
           {isClickable && (
-            <div className="absolute top-2 right-2">
-              <ExternalLink className="w-4 h-4 text-white drop-shadow-md" />
+            <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 text-white drop-shadow-md" />
             </div>
           )}
         </div>
@@ -119,17 +119,17 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
     if (ad.ad_type === 'banner' && ad.image_url) {
       return (
         <div
-          className={`relative w-full overflow-hidden rounded-lg ${isClickable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+          className={`relative w-full overflow-hidden rounded-lg max-h-20 sm:max-h-28 md:max-h-none ${isClickable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
           onClick={() => handleAdClick(ad)}
         >
           <img
             src={ad.image_url}
             alt={ad.title}
-            className="w-full h-auto object-cover"
+            className="w-full h-full object-cover"
           />
           {isClickable && (
-            <div className="absolute top-2 right-2">
-              <ExternalLink className="w-4 h-4 text-white drop-shadow-md" />
+            <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 text-white drop-shadow-md" />
             </div>
           )}
         </div>
@@ -139,17 +139,17 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
     if (ad.ad_type === 'link') {
       return (
         <div
-          className="p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer"
+          className="p-2 sm:p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer"
           onClick={() => handleAdClick(ad)}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <ExternalLink className="w-5 h-5 text-primary" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">{ad.title}</p>
+              <p className="font-medium text-foreground truncate text-sm sm:text-base">{ad.title}</p>
               {ad.description && (
-                <p className="text-sm text-muted-foreground truncate">{ad.description}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{ad.description}</p>
               )}
             </div>
           </div>
@@ -235,11 +235,11 @@ export function AdDisplay({ placement, variant = 'card', className = '', maxAds 
 
   // Default card variant
   return (
-    <div className={`p-4 rounded-2xl bg-card/50 border border-border ${className}`}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider">Sponsored</span>
+    <div className={`p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-card/50 border border-border ${className}`}>
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Sponsored</span>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {visibleAds.map(ad => (
           <div key={ad.id} className="relative">
             <CloseButton adId={ad.id} />
