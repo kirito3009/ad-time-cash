@@ -7,6 +7,7 @@ import { Play, Wallet, HelpCircle, BookOpen, LogOut, Clock, DollarSign, Film, Tr
 import { useToast } from '@/hooks/use-toast';
 import { AdDisplay } from '@/components/AdDisplay';
 import { PageScriptBlock } from '@/components/PageScriptBlock';
+import { StreakCard } from '@/components/StreakCard';
 
 interface Profile {
   full_name: string | null;
@@ -14,6 +15,9 @@ interface Profile {
   total_earnings: number;
   total_watch_time: number;
   ads_watched: number;
+  current_streak: number;
+  longest_streak: number;
+  last_streak_date: string | null;
 }
 
 interface TodayStats {
@@ -204,6 +208,15 @@ export default function Dashboard() {
               <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-accent-foreground" />
             </div>
           </div>
+        </div>
+
+        {/* Streak Card */}
+        <div className="mb-6 sm:mb-8">
+          <StreakCard
+            currentStreak={profile?.current_streak || 0}
+            longestStreak={profile?.longest_streak || 0}
+            lastStreakDate={profile?.last_streak_date || null}
+          />
         </div>
 
         {/* Action Buttons */}

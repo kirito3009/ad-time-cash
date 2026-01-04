@@ -91,8 +91,11 @@ export type Database = {
           ads_watched: number | null
           avatar_url: string | null
           created_at: string | null
+          current_streak: number | null
           full_name: string | null
           id: string
+          last_streak_date: string | null
+          longest_streak: number | null
           total_earnings: number | null
           total_watch_time: number | null
           updated_at: string | null
@@ -101,8 +104,11 @@ export type Database = {
           ads_watched?: number | null
           avatar_url?: string | null
           created_at?: string | null
+          current_streak?: number | null
           full_name?: string | null
           id: string
+          last_streak_date?: string | null
+          longest_streak?: number | null
           total_earnings?: number | null
           total_watch_time?: number | null
           updated_at?: string | null
@@ -111,8 +117,11 @@ export type Database = {
           ads_watched?: number | null
           avatar_url?: string | null
           created_at?: string | null
+          current_streak?: number | null
           full_name?: string | null
           id?: string
+          last_streak_date?: string | null
+          longest_streak?: number | null
           total_earnings?: number | null
           total_watch_time?: number | null
           updated_at?: string | null
@@ -304,6 +313,7 @@ export type Database = {
         Args: { p_action_type: string; p_user_id: string }
         Returns: undefined
       }
+      update_user_streak: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
