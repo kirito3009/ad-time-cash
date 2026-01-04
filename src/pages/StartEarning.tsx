@@ -3,9 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { Play, ArrowLeft, AlertCircle, CheckCircle, Clock, DollarSign, Pause, Eye, EyeOff } from 'lucide-react';
+import { Play, ArrowLeft, AlertCircle, CheckCircle, Clock, DollarSign, Pause, Eye, EyeOff, Sparkles, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PageScriptBlock } from '@/components/PageScriptBlock';
+import { ExternalVideoAd } from '@/components/ExternalVideoAd';
 
 interface Ad {
   id: string;
@@ -14,6 +15,10 @@ interface Ad {
   duration: number;
   reward_amount: number;
 }
+
+// External ad reward config
+const EXTERNAL_AD_REWARD = 0.10; // ₹0.10 per external video ad
+const EXTERNAL_AD_DURATION = 30; // 30 seconds
 
 export default function StartEarning() {
   const { user, loading } = useAuth();
@@ -28,6 +33,8 @@ export default function StartEarning() {
   const [earnedAmount, setEarnedAmount] = useState(0);
   const [sessionEarnings, setSessionEarnings] = useState(0);
   const [adsWatchedSession, setAdsWatchedSession] = useState(0);
+  const [showExternalAd, setShowExternalAd] = useState(false);
+  const [externalAdsWatched, setExternalAdsWatched] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -177,6 +184,35 @@ export default function StartEarning() {
     }
   }, [watchTime, currentAd, isPlaying, completeAd]);
 
+  // Handle external ad completion
+  const handleExternalAdComplete = async (earned: number) => {
+    if (!user) return;
+    
+    // Save to watch history with a special external ad marker
+    const { error } = await supabase
+      .from('watch_history')
+      .insert({
+        user_id: user.id,
+        ad_id: currentAd?.id || ads[0]?.id, // Use current or first ad as reference
+        watch_time: EXTERNAL_AD_DURATION,
+        earned_amount: earned,
+        completed: earned >= EXTERNAL_AD_REWARD * 0.9, // 90% watched = complete
+      });
+
+    if (!error) {
+      setSessionEarnings(prev => prev + earned);
+      setExternalAdsWatched(prev => prev + 1);
+      setAdsWatchedSession(prev => prev + 1);
+      
+      toast({
+        title: 'Reward Collected! 🎉',
+        description: `You earned ₹${earned.toFixed(4)} from the sponsored video`,
+      });
+    }
+    
+    setShowExternalAd(false);
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -219,6 +255,39 @@ export default function StartEarning() {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        {/* Bonus Ad CTA Card */}
+        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
+                <Zap className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-heading font-bold text-foreground">Bonus Video Ads</h3>
+                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-accent/20 text-accent">
+                    +₹{EXTERNAL_AD_REWARD.toFixed(2)}/ad
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">Watch sponsored videos for extra rewards!</p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => setShowExternalAd(true)} 
+              className="gradient-gold shadow-lg hover:scale-105 transition-transform w-full sm:w-auto"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Watch Bonus Ad
+            </Button>
+          </div>
+          {externalAdsWatched > 0 && (
+            <div className="mt-3 pt-3 border-t border-primary/10 text-xs text-muted-foreground">
+              ✨ You've watched {externalAdsWatched} bonus ad{externalAdsWatched > 1 ? 's' : ''} this session
+            </div>
+          )}
+        </div>
+
         {/* Tab Status Warning */}
         {!isTabActive && (
           <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 sm:gap-3">
@@ -235,8 +304,12 @@ export default function StartEarning() {
             </div>
             <h2 className="text-2xl font-heading font-bold text-foreground mb-3">No Ads Available</h2>
             <p className="text-muted-foreground mb-6">Check back later for new earning opportunities!</p>
-            <Button asChild>
-              <Link to="/dashboard">Return to Dashboard</Link>
+            <Button 
+              onClick={() => setShowExternalAd(true)}
+              className="gradient-gold"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Watch Bonus Ad Instead
             </Button>
           </div>
         ) : (
@@ -353,6 +426,15 @@ export default function StartEarning() {
         {/* Custom Ad Script Block */}
         <PageScriptBlock settingKey="watch_page_script" className="mt-8" />
       </main>
+
+      {/* External Video Ad Modal */}
+      <ExternalVideoAd
+        isOpen={showExternalAd}
+        onClose={() => setShowExternalAd(false)}
+        onAdComplete={handleExternalAdComplete}
+        rewardAmount={EXTERNAL_AD_REWARD}
+        adDuration={EXTERNAL_AD_DURATION}
+      />
     </div>
   );
 }
