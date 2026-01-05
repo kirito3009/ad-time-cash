@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import { AuthModal } from '@/components/AuthModal';
 import { Play, TrendingUp, Shield, Clock, DollarSign, Users, Mail } from 'lucide-react';
-import { AdDisplay } from '@/components/AdDisplay';
-import { PageScriptBlock } from '@/components/PageScriptBlock';
 
 export default function Landing() {
   const { user, loading } = useAuth();
@@ -151,17 +149,6 @@ export default function Landing() {
               color="secondary"
             />
           </div>
-        </div>
-      </section>
-
-      {/* Sponsored Banner */}
-      <section className="container mx-auto px-3 sm:px-4 py-4 sm:py-6" aria-label="Sponsored">
-        <AdDisplay placement="home" variant="banner" />
-
-        {/* Custom Ad Script Block (Ad network HTML/JS) */}
-        <div className="mt-4 sm:mt-6 rounded-xl sm:rounded-2xl bg-card shadow-card border border-border p-3 sm:p-4 min-h-[80px] sm:min-h-[90px]">
-          <h2 className="sr-only">Sponsored content</h2>
-          <PageScriptBlock settingKey="home_page_script" />
         </div>
       </section>
 
