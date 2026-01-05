@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { AdvertisementDashboard } from '@/components/admin/AdvertisementDashboard';
 
 // Validation schema for app settings
 const settingsSchema = z.object({
@@ -27,10 +26,6 @@ const settingsSchema = z.object({
   }, { message: 'Minimum withdrawal must be between 0 and 100000' }),
   landing_text: z.string().max(5000, { message: 'Landing text must be less than 5000 characters' }),
   how_it_works_content: z.string().max(10000, { message: 'How it works content must be less than 10000 characters' }),
-  global_head_script: z.string().max(50000, { message: 'Global head script must be less than 50000 characters' }),
-  home_page_script: z.string().max(50000, { message: 'Home page script must be less than 50000 characters' }),
-  dashboard_page_script: z.string().max(50000, { message: 'Dashboard page script must be less than 50000 characters' }),
-  watch_page_script: z.string().max(50000, { message: 'Watch page script must be less than 50000 characters' }),
 });
 
 interface Profile {
@@ -40,7 +35,7 @@ interface Profile {
   total_watch_time: number;
   ads_watched: number;
   created_at: string;
-  email?: string; // Fetched separately via RPC for admins
+  email?: string;
 }
 
 interface Ad {
@@ -89,10 +84,6 @@ interface AppSettings {
   min_withdrawal: string;
   landing_text: string;
   how_it_works_content: string;
-  global_head_script: string;
-  home_page_script: string;
-  dashboard_page_script: string;
-  watch_page_script: string;
 }
 
 export default function Admin() {
@@ -109,10 +100,6 @@ export default function Admin() {
     min_withdrawal: '100',
     landing_text: '',
     how_it_works_content: '',
-    global_head_script: '',
-    home_page_script: '',
-    dashboard_page_script: '',
-    watch_page_script: '',
   });
 
   const [newAd, setNewAd] = useState({ title: '', video_url: '', duration: 30, reward_amount: 0.01 });
@@ -130,11 +117,10 @@ export default function Admin() {
   }, [isAdmin]);
 
   const fetchAllData = async () => {
-    // Fetch profiles (email is no longer in profiles table for security)
+    // Fetch profiles
     const { data: profilesData } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     
     if (profilesData) {
-      // Fetch emails for each user via secure RPC function (admin only)
       const profilesWithEmails = await Promise.all(
         profilesData.map(async (profile) => {
           const { data: email } = await supabase.rpc('get_user_email', { _user_id: profile.id });
@@ -155,7 +141,6 @@ export default function Admin() {
       .order('created_at', { ascending: false });
     
     if (withdrawalsData) {
-      // Fetch profile names and emails for each withdrawal via secure RPC
       const userIds = [...new Set(withdrawalsData.map(w => w.user_id))];
       const { data: profilesForWithdrawals } = await supabase
         .from('profiles')
@@ -164,7 +149,6 @@ export default function Admin() {
       
       const profileMap = new Map(profilesForWithdrawals?.map(p => [p.id, p]) || []);
       
-      // Fetch emails via secure RPC
       const emailMap = new Map<string, string>();
       await Promise.all(
         userIds.map(async (userId) => {
@@ -182,10 +166,9 @@ export default function Admin() {
       setWithdrawals(withdrawalsWithProfiles);
     }
 
-    // Fetch messages and get sender info via secure RPC
+    // Fetch messages
     const { data: messagesData } = await supabase.from('support_messages').select('*').order('created_at', { ascending: false });
     if (messagesData) {
-      // Fetch sender info for each message via secure RPC function
       const messagesWithSenderInfo = await Promise.all(
         messagesData.map(async (message) => {
           const { data: senderInfo } = await supabase.rpc('get_support_message_sender_info', { _user_id: message.user_id });
@@ -261,12 +244,10 @@ export default function Admin() {
 
   const handleDecryptPayment = async (withdrawal: Withdrawal) => {
     try {
-      // Decrypt payment method
       const { data: methodData, error: methodError } = await supabase.rpc('decrypt_payment_details', {
         encrypted_data: withdrawal.payment_method
       });
 
-      // Decrypt payment details
       const { data: detailsData, error: detailsError } = await supabase.rpc('decrypt_payment_details', {
         encrypted_data: withdrawal.payment_details
       });
@@ -276,7 +257,6 @@ export default function Admin() {
         return;
       }
 
-      // Update the withdrawal in state with decrypted values
       setWithdrawals(prev => prev.map(w => 
         w.id === withdrawal.id 
           ? { ...w, decrypted_method: methodData, decrypted_details: detailsData }
@@ -299,7 +279,6 @@ export default function Admin() {
   };
 
   const handleSaveSettings = async () => {
-    // Validate settings before saving
     const validationResult = settingsSchema.safeParse(settings);
     if (!validationResult.success) {
       const errors = validationResult.error.errors.map(e => e.message).join(', ');
@@ -347,7 +326,7 @@ export default function Admin() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="ads" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-1">
             <TabsTrigger value="ads" className="flex items-center gap-2 py-3">
               <Film className="w-4 h-4" />
               <span className="hidden sm:inline">Ads</span>
@@ -364,15 +343,78 @@ export default function Admin() {
               <MessageCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Messages</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2 py-3">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
           </TabsList>
 
           {/* Ads Tab */}
           <TabsContent value="ads" className="space-y-6">
-            <AdvertisementDashboard ads={ads} onRefresh={fetchAllData} />
+            <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
+              <h2 className="text-xl font-heading font-semibold mb-4">Add New Ad</h2>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input
+                    value={newAd.title}
+                    onChange={e => setNewAd(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Ad title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Video URL</Label>
+                  <Input
+                    value={newAd.video_url}
+                    onChange={e => setNewAd(prev => ({ ...prev, video_url: e.target.value }))}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Duration (seconds)</Label>
+                  <Input
+                    type="number"
+                    value={newAd.duration}
+                    onChange={e => setNewAd(prev => ({ ...prev, duration: parseInt(e.target.value) || 30 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Reward (₹)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={newAd.reward_amount}
+                    onChange={e => setNewAd(prev => ({ ...prev, reward_amount: parseFloat(e.target.value) || 0.01 }))}
+                  />
+                </div>
+              </div>
+              <Button className="mt-4" onClick={handleAddAd}>Add Ad</Button>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
+              <h2 className="text-xl font-heading font-semibold mb-4">All Ads ({ads.length})</h2>
+              <div className="space-y-3">
+                {ads.map(ad => (
+                  <div key={ad.id} className="flex items-center justify-between gap-4 p-4 rounded-xl bg-muted/50">
+                    <div>
+                      <p className="font-medium">{ad.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {ad.duration}s • ₹{Number(ad.reward_amount).toFixed(4)} • {ad.is_active ? 'Active' : 'Inactive'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={ad.is_active ? 'outline' : 'default'}
+                        onClick={() => handleToggleAd(ad.id, ad.is_active)}
+                      >
+                        {ad.is_active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteAd(ad.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {ads.length === 0 && <p className="text-muted-foreground text-center py-8">No ads yet</p>}
+              </div>
+            </div>
           </TabsContent>
 
           {/* Users Tab */}
@@ -499,127 +541,6 @@ export default function Admin() {
                 ))}
                 {messages.length === 0 && <p className="text-muted-foreground text-center py-8">No messages</p>}
               </div>
-            </div>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings">
-            <div className="space-y-6">
-              {/* General Settings */}
-              <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
-                <h2 className="text-xl font-heading font-semibold mb-6">General Settings</h2>
-                <div className="space-y-6">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Revenue Share (%)</Label>
-                      <Input
-                        type="number"
-                        value={settings.revenue_share_percent}
-                        onChange={e => setSettings(prev => ({ ...prev, revenue_share_percent: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Minimum Withdrawal (₹)</Label>
-                      <Input
-                        type="number"
-                        value={settings.min_withdrawal}
-                        onChange={e => setSettings(prev => ({ ...prev, min_withdrawal: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Landing Page Text</Label>
-                    <Textarea
-                      value={settings.landing_text}
-                      onChange={e => setSettings(prev => ({ ...prev, landing_text: e.target.value }))}
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>How It Works Content</Label>
-                    <Textarea
-                      value={settings.how_it_works_content}
-                      onChange={e => setSettings(prev => ({ ...prev, how_it_works_content: e.target.value }))}
-                      rows={5}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Ad Scripts Section */}
-              <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
-                <h2 className="text-xl font-heading font-semibold mb-2">Ad Scripts & Custom Code</h2>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Paste your Adsterra or other ad network scripts here. Scripts support &lt;script&gt; tags and will execute properly.
-                </p>
-                
-                <div className="space-y-6">
-                  {/* Global Head Script */}
-                  <div className="space-y-2 p-4 rounded-xl bg-muted/50 border border-border">
-                    <Label className="text-base font-semibold">Global Head Code (Site-wide)</Label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      This code will be injected into the &lt;head&gt; tag on ALL pages. Use for site-wide tracking, analytics, or ad scripts.
-                    </p>
-                    <Textarea
-                      value={settings.global_head_script}
-                      onChange={e => setSettings(prev => ({ ...prev, global_head_script: e.target.value }))}
-                      rows={6}
-                      placeholder={'<script type="text/javascript">\n  // Your global ad script here\n</script>'}
-                      className="font-mono text-sm"
-                    />
-                  </div>
-
-                  {/* Page-Specific Scripts */}
-                  <div className="grid gap-4">
-                    <div className="space-y-2 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                      <Label className="text-base font-semibold">Home Page Script</Label>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Script/HTML for the Landing/Home page only.
-                      </p>
-                      <Textarea
-                        value={settings.home_page_script}
-                        onChange={e => setSettings(prev => ({ ...prev, home_page_script: e.target.value }))}
-                        rows={5}
-                        placeholder={'<script type="text/javascript">\n  // Home page ad script\n</script>'}
-                        className="font-mono text-sm"
-                      />
-                    </div>
-
-                    <div className="space-y-2 p-4 rounded-xl bg-accent/5 border border-accent/20">
-                      <Label className="text-base font-semibold">Dashboard Page Script</Label>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Script/HTML for the Dashboard page only.
-                      </p>
-                      <Textarea
-                        value={settings.dashboard_page_script}
-                        onChange={e => setSettings(prev => ({ ...prev, dashboard_page_script: e.target.value }))}
-                        rows={5}
-                        placeholder={'<script type="text/javascript">\n  // Dashboard ad script\n</script>'}
-                        className="font-mono text-sm"
-                      />
-                    </div>
-
-                    <div className="space-y-2 p-4 rounded-xl bg-secondary/5 border border-secondary/20">
-                      <Label className="text-base font-semibold">Watch Ads Page Script</Label>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Script/HTML for the Start Earning/Watch Ads page only.
-                      </p>
-                      <Textarea
-                        value={settings.watch_page_script}
-                        onChange={e => setSettings(prev => ({ ...prev, watch_page_script: e.target.value }))}
-                        rows={5}
-                        placeholder={'<script type="text/javascript">\n  // Watch page ad script\n</script>'}
-                        className="font-mono text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <Button onClick={handleSaveSettings} size="lg">
-                <Save className="w-4 h-4 mr-2" />
-                Save All Settings
-              </Button>
             </div>
           </TabsContent>
         </Tabs>
