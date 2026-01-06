@@ -3,43 +3,34 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { Play, ArrowLeft, AlertCircle, CheckCircle, Clock, DollarSign, Pause, Eye, EyeOff } from 'lucide-react';
+import { Play, ArrowLeft, DollarSign, Pause, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface Ad {
-  id: string;
-  title: string;
-  video_url: string;
-  duration: number;
-  reward_amount: number;
-}
+// Default reward settings for Adsterra ads
+const AD_DURATION = 30; // seconds
+const REWARD_AMOUNT = 0.01; // ₹ per ad view
 
 export default function StartEarning() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [ads, setAds] = useState<Ad[]>([]);
-  const [currentAd, setCurrentAd] = useState<Ad | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [watchTime, setWatchTime] = useState(0);
   const [isTabActive, setIsTabActive] = useState(true);
   const [earnedAmount, setEarnedAmount] = useState(0);
   const [sessionEarnings, setSessionEarnings] = useState(0);
   const [adsWatchedSession, setAdsWatchedSession] = useState(0);
+  const [adLoaded, setAdLoaded] = useState(false);
   
-  const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const adContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/');
     }
   }, [user, loading, navigate]);
-
-  useEffect(() => {
-    fetchAds();
-  }, []);
 
   // Tab visibility detection
   useEffect(() => {
@@ -50,7 +41,7 @@ export default function StartEarning() {
       if (!isVisible && isPlaying) {
         pauseAd();
         toast({
-          title: 'Video Paused',
+          title: 'Ad Paused',
           description: 'Please stay on this tab to continue earning.',
           variant: 'destructive',
         });
@@ -59,7 +50,7 @@ export default function StartEarning() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isPlaying]);
+  }, [isPlaying, toast]);
 
   // Window blur detection
   useEffect(() => {
@@ -73,38 +64,36 @@ export default function StartEarning() {
     return () => window.removeEventListener('blur', handleBlur);
   }, [isPlaying]);
 
-  const fetchAds = async () => {
-    const { data, error } = await supabase
-      .from('ads')
-      .select('*')
-      .eq('is_active', true);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
-    if (error) {
-      return;
-    }
-
-    setAds(data || []);
-    if (data && data.length > 0) {
-      setCurrentAd(data[0]);
-    }
-  };
-
-  // Load external ad script
+  // Load Adsterra ad script
   const loadAdScript = useCallback(() => {
-    // Check if script already exists to avoid duplicates
-    const existingScript = document.querySelector('script[data-ad-script="adsterra"]');
-    if (existingScript) return;
+    // Remove existing ad scripts
+    const existingScripts = document.querySelectorAll('script[data-ad-script="adsterra"]');
+    existingScripts.forEach(s => s.remove());
 
     const script = document.createElement('script');
     script.setAttribute('data-ad-script', 'adsterra');
     script.async = true;
     script.referrerPolicy = 'no-referrer-when-downgrade';
     script.src = '//adolescentzone.com/b.X/VlszdKG/l/0oY_WMce/fe/mr9/uxZ/UFlDkaPQTqYA3/NXD_I/0dNPDZY/tdN/jgct0-M/jQQP0LN/wS';
+    
+    script.onload = () => {
+      setAdLoaded(true);
+    };
+    
     document.body.appendChild(script);
   }, []);
 
   const startAd = useCallback(() => {
-    if (!currentAd || !isTabActive) return;
+    if (!isTabActive) return;
     
     // Load ad script when user clicks to start earning
     loadAdScript();
@@ -112,60 +101,78 @@ export default function StartEarning() {
     setIsPlaying(true);
     setWatchTime(0);
     setEarnedAmount(0);
-    
-    if (videoRef.current) {
-      videoRef.current.play();
-    }
 
     // Start timer
     timerRef.current = setInterval(() => {
       setWatchTime(prev => {
         const newTime = prev + 1;
-        if (currentAd) {
-          const progress = Math.min(newTime / currentAd.duration, 1);
-          setEarnedAmount(Number(currentAd.reward_amount) * progress);
-        }
+        const progress = Math.min(newTime / AD_DURATION, 1);
+        setEarnedAmount(REWARD_AMOUNT * progress);
         return newTime;
       });
     }, 1000);
-  }, [currentAd, isTabActive, loadAdScript]);
+  }, [isTabActive, loadAdScript]);
 
   const pauseAd = useCallback(() => {
     setIsPlaying(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
-    }
-    if (videoRef.current) {
-      videoRef.current.pause();
+      timerRef.current = null;
     }
   }, []);
 
   const completeAd = useCallback(async () => {
-    if (!currentAd || !user) return;
+    if (!user) return;
 
     pauseAd();
 
-    const completed = watchTime >= currentAd.duration;
-    const finalEarned = completed ? Number(currentAd.reward_amount) : earnedAmount;
+    const completed = watchTime >= AD_DURATION;
+    const finalEarned = completed ? REWARD_AMOUNT : earnedAmount;
 
-    // Save watch history
-    const { error } = await supabase
-      .from('watch_history')
-      .insert({
-        user_id: user.id,
-        ad_id: currentAd.id,
-        watch_time: watchTime,
-        earned_amount: finalEarned,
-        completed,
-      });
+    // Save watch history - use a placeholder ad_id for Adsterra ads
+    // First, check if we have a placeholder ad in the database
+    let adId = 'adsterra-external';
+    
+    // Try to get or create a placeholder ad entry
+    const { data: existingAd } = await supabase
+      .from('ads')
+      .select('id')
+      .eq('title', 'Adsterra External Ad')
+      .single();
 
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save your earnings. Please try again.',
-        variant: 'destructive',
-      });
-      return;
+    if (existingAd) {
+      adId = existingAd.id;
+    }
+
+    // Only save if we have a valid ad_id (foreign key constraint)
+    if (existingAd) {
+      await supabase
+        .from('watch_history')
+        .insert({
+          user_id: user.id,
+          ad_id: adId,
+          watch_time: watchTime,
+          earned_amount: finalEarned,
+          completed,
+        });
+    }
+
+    // Update profile earnings directly
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('total_earnings, total_watch_time, ads_watched')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      await supabase
+        .from('profiles')
+        .update({
+          total_earnings: (Number(profile.total_earnings) || 0) + finalEarned,
+          total_watch_time: (Number(profile.total_watch_time) || 0) + watchTime,
+          ads_watched: (Number(profile.ads_watched) || 0) + (completed ? 1 : 0),
+        })
+        .eq('id', user.id);
     }
 
     setSessionEarnings(prev => prev + finalEarned);
@@ -178,20 +185,18 @@ export default function StartEarning() {
       description: `You earned ₹${finalEarned.toFixed(4)}`,
     });
 
-    // Move to next ad
-    const currentIndex = ads.findIndex(ad => ad.id === currentAd.id);
-    const nextIndex = (currentIndex + 1) % ads.length;
-    setCurrentAd(ads[nextIndex]);
+    // Reset for next ad
     setWatchTime(0);
     setEarnedAmount(0);
-  }, [currentAd, user, watchTime, earnedAmount, ads, pauseAd, toast]);
+    setAdLoaded(false);
+  }, [user, watchTime, earnedAmount, pauseAd, toast]);
 
-  // Auto-complete when video ends
+  // Auto-complete when timer ends
   useEffect(() => {
-    if (currentAd && watchTime >= currentAd.duration && isPlaying) {
+    if (watchTime >= AD_DURATION && isPlaying) {
       completeAd();
     }
-  }, [watchTime, currentAd, isPlaying, completeAd]);
+  }, [watchTime, isPlaying, completeAd]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -239,132 +244,120 @@ export default function StartEarning() {
         {!isTabActive && (
           <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 sm:gap-3">
             <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-destructive flex-shrink-0" />
-            <p className="text-destructive font-medium text-sm sm:text-base">Video paused - Stay on this tab to earn</p>
+            <p className="text-destructive font-medium text-sm sm:text-base">Ad paused - Stay on this tab to earn</p>
           </div>
         )}
 
-        {/* No Ads State */}
-        {ads.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h2 className="text-2xl font-heading font-bold text-foreground mb-3">No Ads Available</h2>
-            <p className="text-muted-foreground mb-6">Check back later for new earning opportunities!</p>
-            <Button asChild>
-              <Link to="/dashboard">Go to Dashboard</Link>
-            </Button>
+        <div className="max-w-4xl mx-auto">
+          {/* Title */}
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground mb-2">
+              Watch Ads & Earn
+            </h1>
+            <p className="text-muted-foreground">
+              Watch for {AD_DURATION} seconds to earn <span className="text-gradient-gold font-semibold">₹{REWARD_AMOUNT.toFixed(4)}</span>
+            </p>
           </div>
-        ) : (
-          <div className="max-w-4xl mx-auto">
-            {/* Current Ad Info */}
-            {currentAd && (
-              <>
-                <div className="mb-6 text-center">
-                  <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground mb-2">
-                    {currentAd.title}
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Watch the full video to earn <span className="text-gradient-gold font-semibold">₹{Number(currentAd.reward_amount).toFixed(4)}</span>
-                  </p>
-                </div>
 
-                {/* Video Player */}
-                <div className="relative aspect-video bg-foreground/5 rounded-2xl overflow-hidden mb-6 shadow-elevated">
-                  <video
-                    ref={videoRef}
-                    src={currentAd.video_url}
-                    className="w-full h-full object-contain"
-                    playsInline
-                    onEnded={completeAd}
-                  />
-                  
-                  {/* Overlay when not playing */}
-                  {!isPlaying && (
-                    <div className="absolute inset-0 bg-foreground/60 flex items-center justify-center">
-                      <Button size="xl" onClick={startAd} disabled={!isTabActive}>
-                        <Play className="w-6 h-6 mr-2" />
-                        {watchTime > 0 ? 'Resume' : 'Start Watching'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Progress & Controls */}
-                <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">
-                        {formatTime(watchTime)} / {formatTime(currentAd.duration)}
-                      </span>
-                    </div>
-                    <div className="h-3 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full gradient-primary transition-all duration-300"
-                        style={{ width: `${Math.min((watchTime / currentAd.duration) * 100, 100)}%` }}
-                      />
+          {/* Ad Container */}
+          <div 
+            ref={adContainerRef}
+            className="relative aspect-video bg-foreground/5 rounded-2xl overflow-hidden mb-6 shadow-elevated flex items-center justify-center"
+          >
+            {!isPlaying ? (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                <Button size="lg" onClick={startAd} disabled={!isTabActive} className="gap-2">
+                  <Play className="w-6 h-6" />
+                  {watchTime > 0 ? 'Resume Watching' : 'Start Earning'}
+                </Button>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+                <div className="text-center">
+                  <div className="animate-pulse mb-4">
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                      <Eye className="w-8 h-8 text-primary" />
                     </div>
                   </div>
-
-                  {/* Earnings Display */}
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-accent/10 mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl gradient-gold flex items-center justify-center">
-                        <DollarSign className="w-5 h-5 text-accent-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Current Earnings</p>
-                        <p className="text-xl font-heading font-bold text-gradient-gold">
-                          ₹{earnedAmount.toFixed(4)}
-                        </p>
-                      </div>
-                    </div>
-                    {watchTime >= currentAd.duration && (
-                      <div className="flex items-center gap-2 text-primary">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Completed!</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Control Buttons */}
-                  <div className="flex gap-3">
-                    {isPlaying ? (
-                      <Button variant="outline" className="flex-1" onClick={pauseAd}>
-                        <Pause className="w-4 h-4 mr-2" />
-                        Pause
-                      </Button>
-                    ) : (
-                      <Button className="flex-1" onClick={startAd} disabled={!isTabActive}>
-                        <Play className="w-4 h-4 mr-2" />
-                        {watchTime > 0 ? 'Resume' : 'Start'}
-                      </Button>
-                    )}
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={completeAd}
-                      disabled={watchTime === 0}
-                    >
-                      Skip & Collect
-                    </Button>
-                  </div>
+                  <p className="text-lg font-medium text-foreground">Ad Playing...</p>
+                  <p className="text-sm text-muted-foreground">Keep watching to earn rewards</p>
                 </div>
-
-                {/* Anti-cheat Notice */}
-                <div className="mt-6 p-4 rounded-xl bg-muted/50 flex items-start gap-3">
-                  <Eye className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-muted-foreground">
-                    <p className="font-medium mb-1">Fair Play Notice</p>
-                    <p>Video will pause if you switch tabs or minimize the window. Please watch ads fully to maximize your earnings.</p>
-                  </div>
-                </div>
-              </>
+              </div>
             )}
           </div>
-        )}
+
+          {/* Progress & Controls */}
+          <div className="p-6 rounded-2xl bg-card shadow-card border border-border">
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Progress</span>
+                <span className="font-medium">
+                  {formatTime(watchTime)} / {formatTime(AD_DURATION)}
+                </span>
+              </div>
+              <div className="h-3 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full gradient-primary transition-all duration-300"
+                  style={{ width: `${Math.min((watchTime / AD_DURATION) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Earnings Display */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-accent/10 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl gradient-gold flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-accent-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Current Earnings</p>
+                  <p className="text-xl font-heading font-bold text-gradient-gold">
+                    ₹{earnedAmount.toFixed(4)}
+                  </p>
+                </div>
+              </div>
+              {watchTime >= AD_DURATION && (
+                <div className="flex items-center gap-2 text-primary">
+                  <RefreshCw className="w-5 h-5" />
+                  <span className="font-medium">Ready for next!</span>
+                </div>
+              )}
+            </div>
+
+            {/* Control Buttons */}
+            <div className="flex gap-3">
+              {isPlaying ? (
+                <Button variant="outline" className="flex-1" onClick={pauseAd}>
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pause
+                </Button>
+              ) : (
+                <Button className="flex-1" onClick={startAd} disabled={!isTabActive}>
+                  <Play className="w-4 h-4 mr-2" />
+                  {watchTime > 0 ? 'Resume' : 'Start'}
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={completeAd}
+                disabled={watchTime === 0}
+              >
+                Collect & Next
+              </Button>
+            </div>
+          </div>
+
+          {/* Anti-cheat Notice */}
+          <div className="mt-6 p-4 rounded-xl bg-muted/50 flex items-start gap-3">
+            <Eye className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-1">Fair Play Notice</p>
+              <p>Timer will pause if you switch tabs or minimize the window. Please stay on this page to maximize your earnings.</p>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
