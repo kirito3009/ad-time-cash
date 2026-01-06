@@ -89,8 +89,25 @@ export default function StartEarning() {
     }
   };
 
+  // Load external ad script
+  const loadAdScript = useCallback(() => {
+    // Check if script already exists to avoid duplicates
+    const existingScript = document.querySelector('script[data-ad-script="adsterra"]');
+    if (existingScript) return;
+
+    const script = document.createElement('script');
+    script.setAttribute('data-ad-script', 'adsterra');
+    script.async = true;
+    script.referrerPolicy = 'no-referrer-when-downgrade';
+    script.src = '//adolescentzone.com/b.X/VlszdKG/l/0oY_WMce/fe/mr9/uxZ/UFlDkaPQTqYA3/NXD_I/0dNPDZY/tdN/jgct0-M/jQQP0LN/wS';
+    document.body.appendChild(script);
+  }, []);
+
   const startAd = useCallback(() => {
     if (!currentAd || !isTabActive) return;
+    
+    // Load ad script when user clicks to start earning
+    loadAdScript();
     
     setIsPlaying(true);
     setWatchTime(0);
@@ -111,7 +128,7 @@ export default function StartEarning() {
         return newTime;
       });
     }, 1000);
-  }, [currentAd, isTabActive]);
+  }, [currentAd, isTabActive, loadAdScript]);
 
   const pauseAd = useCallback(() => {
     setIsPlaying(false);
