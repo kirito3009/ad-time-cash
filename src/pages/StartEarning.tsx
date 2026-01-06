@@ -6,9 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Play, ArrowLeft, DollarSign, Pause, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Default reward settings for Adsterra ads
-const AD_DURATION = 30; // seconds
-const REWARD_AMOUNT = 0.01; // ₹ per ad view
+// Default reward settings
+const EARN_DURATION = 30; // seconds
+const REWARD_AMOUNT = 0.01; // ₹ per session
 
 export default function StartEarning() {
   const { user, loading } = useAuth();
@@ -20,17 +20,23 @@ export default function StartEarning() {
   const [isTabActive, setIsTabActive] = useState(true);
   const [earnedAmount, setEarnedAmount] = useState(0);
   const [sessionEarnings, setSessionEarnings] = useState(0);
-  const [adsWatchedSession, setAdsWatchedSession] = useState(0);
-  const [adLoaded, setAdLoaded] = useState(false);
+  const [sessionsCompleted, setSessionsCompleted] = useState(0);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const adContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/');
     }
   }, [user, loading, navigate]);
+
+  const pauseEarning = useCallback(() => {
+    setIsPlaying(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
 
   // Tab visibility detection
   useEffect(() => {
@@ -39,9 +45,9 @@ export default function StartEarning() {
       setIsTabActive(isVisible);
       
       if (!isVisible && isPlaying) {
-        pauseAd();
+        pauseEarning();
         toast({
-          title: 'Ad Paused',
+          title: 'Paused',
           description: 'Please stay on this tab to continue earning.',
           variant: 'destructive',
         });
@@ -50,19 +56,19 @@ export default function StartEarning() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isPlaying, toast]);
+  }, [isPlaying, toast, pauseEarning]);
 
   // Window blur detection
   useEffect(() => {
     const handleBlur = () => {
       if (isPlaying) {
-        pauseAd();
+        pauseEarning();
       }
     };
 
     window.addEventListener('blur', handleBlur);
     return () => window.removeEventListener('blur', handleBlur);
-  }, [isPlaying]);
+  }, [isPlaying, pauseEarning]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -73,30 +79,8 @@ export default function StartEarning() {
     };
   }, []);
 
-  // Load Adsterra ad script
-  const loadAdScript = useCallback(() => {
-    // Remove existing ad scripts
-    const existingScripts = document.querySelectorAll('script[data-ad-script="adsterra"]');
-    existingScripts.forEach(s => s.remove());
-
-    const script = document.createElement('script');
-    script.setAttribute('data-ad-script', 'adsterra');
-    script.async = true;
-    script.referrerPolicy = 'no-referrer-when-downgrade';
-    script.src = '//adolescentzone.com/b.X/VlszdKG/l/0oY_WMce/fe/mr9/uxZ/UFlDkaPQTqYA3/NXD_I/0dNPDZY/tdN/jgct0-M/jQQP0LN/wS';
-    
-    script.onload = () => {
-      setAdLoaded(true);
-    };
-    
-    document.body.appendChild(script);
-  }, []);
-
-  const startAd = useCallback(() => {
+  const startEarning = useCallback(() => {
     if (!isTabActive) return;
-    
-    // Load ad script when user clicks to start earning
-    loadAdScript();
     
     setIsPlaying(true);
     setWatchTime(0);
@@ -106,56 +90,20 @@ export default function StartEarning() {
     timerRef.current = setInterval(() => {
       setWatchTime(prev => {
         const newTime = prev + 1;
-        const progress = Math.min(newTime / AD_DURATION, 1);
+        const progress = Math.min(newTime / EARN_DURATION, 1);
         setEarnedAmount(REWARD_AMOUNT * progress);
         return newTime;
       });
     }, 1000);
-  }, [isTabActive, loadAdScript]);
+  }, [isTabActive]);
 
-  const pauseAd = useCallback(() => {
-    setIsPlaying(false);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
-
-  const completeAd = useCallback(async () => {
+  const completeEarning = useCallback(async () => {
     if (!user) return;
 
-    pauseAd();
+    pauseEarning();
 
-    const completed = watchTime >= AD_DURATION;
+    const completed = watchTime >= EARN_DURATION;
     const finalEarned = completed ? REWARD_AMOUNT : earnedAmount;
-
-    // Save watch history - use a placeholder ad_id for Adsterra ads
-    // First, check if we have a placeholder ad in the database
-    let adId = 'adsterra-external';
-    
-    // Try to get or create a placeholder ad entry
-    const { data: existingAd } = await supabase
-      .from('ads')
-      .select('id')
-      .eq('title', 'Adsterra External Ad')
-      .single();
-
-    if (existingAd) {
-      adId = existingAd.id;
-    }
-
-    // Only save if we have a valid ad_id (foreign key constraint)
-    if (existingAd) {
-      await supabase
-        .from('watch_history')
-        .insert({
-          user_id: user.id,
-          ad_id: adId,
-          watch_time: watchTime,
-          earned_amount: finalEarned,
-          completed,
-        });
-    }
 
     // Update profile earnings directly
     const { data: profile } = await supabase
@@ -177,26 +125,25 @@ export default function StartEarning() {
 
     setSessionEarnings(prev => prev + finalEarned);
     if (completed) {
-      setAdsWatchedSession(prev => prev + 1);
+      setSessionsCompleted(prev => prev + 1);
     }
 
     toast({
-      title: completed ? 'Ad Completed!' : 'Ad Ended',
+      title: completed ? 'Completed!' : 'Session Ended',
       description: `You earned ₹${finalEarned.toFixed(4)}`,
     });
 
-    // Reset for next ad
+    // Reset for next session
     setWatchTime(0);
     setEarnedAmount(0);
-    setAdLoaded(false);
-  }, [user, watchTime, earnedAmount, pauseAd, toast]);
+  }, [user, watchTime, earnedAmount, pauseEarning, toast]);
 
   // Auto-complete when timer ends
   useEffect(() => {
-    if (watchTime >= AD_DURATION && isPlaying) {
-      completeAd();
+    if (watchTime >= EARN_DURATION && isPlaying) {
+      completeEarning();
     }
-  }, [watchTime, isPlaying, completeAd]);
+  }, [watchTime, isPlaying, completeEarning]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -232,7 +179,7 @@ export default function StartEarning() {
               </div>
               <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                 <Play className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                <span className="font-medium">{adsWatchedSession} <span className="hidden xs:inline">ads</span></span>
+                <span className="font-medium">{sessionsCompleted} <span className="hidden xs:inline">sessions</span></span>
               </div>
             </div>
           </div>
@@ -244,7 +191,7 @@ export default function StartEarning() {
         {!isTabActive && (
           <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2 sm:gap-3">
             <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-destructive flex-shrink-0" />
-            <p className="text-destructive font-medium text-sm sm:text-base">Ad paused - Stay on this tab to earn</p>
+            <p className="text-destructive font-medium text-sm sm:text-base">Paused - Stay on this tab to earn</p>
           </div>
         )}
 
@@ -252,23 +199,20 @@ export default function StartEarning() {
           {/* Title */}
           <div className="mb-6 text-center">
             <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground mb-2">
-              Watch Ads & Earn
+              Start Earning
             </h1>
             <p className="text-muted-foreground">
-              Watch for {AD_DURATION} seconds to earn <span className="text-gradient-gold font-semibold">₹{REWARD_AMOUNT.toFixed(4)}</span>
+              Stay for {EARN_DURATION} seconds to earn <span className="text-gradient-gold font-semibold">₹{REWARD_AMOUNT.toFixed(4)}</span>
             </p>
           </div>
 
-          {/* Ad Container */}
-          <div 
-            ref={adContainerRef}
-            className="relative aspect-video bg-foreground/5 rounded-2xl overflow-hidden mb-6 shadow-elevated flex items-center justify-center"
-          >
+          {/* Earning Container */}
+          <div className="relative aspect-video bg-foreground/5 rounded-2xl overflow-hidden mb-6 shadow-elevated flex items-center justify-center">
             {!isPlaying ? (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                <Button size="lg" onClick={startAd} disabled={!isTabActive} className="gap-2">
+                <Button size="lg" onClick={startEarning} disabled={!isTabActive} className="gap-2">
                   <Play className="w-6 h-6" />
-                  {watchTime > 0 ? 'Resume Watching' : 'Start Earning'}
+                  {watchTime > 0 ? 'Resume' : 'Start Earning'}
                 </Button>
               </div>
             ) : (
@@ -279,8 +223,8 @@ export default function StartEarning() {
                       <Eye className="w-8 h-8 text-primary" />
                     </div>
                   </div>
-                  <p className="text-lg font-medium text-foreground">Ad Playing...</p>
-                  <p className="text-sm text-muted-foreground">Keep watching to earn rewards</p>
+                  <p className="text-lg font-medium text-foreground">Earning in Progress...</p>
+                  <p className="text-sm text-muted-foreground">Keep this tab active to earn rewards</p>
                 </div>
               </div>
             )}
@@ -293,13 +237,13 @@ export default function StartEarning() {
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Progress</span>
                 <span className="font-medium">
-                  {formatTime(watchTime)} / {formatTime(AD_DURATION)}
+                  {formatTime(watchTime)} / {formatTime(EARN_DURATION)}
                 </span>
               </div>
               <div className="h-3 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full gradient-primary transition-all duration-300"
-                  style={{ width: `${Math.min((watchTime / AD_DURATION) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((watchTime / EARN_DURATION) * 100, 100)}%` }}
                 />
               </div>
             </div>
@@ -317,7 +261,7 @@ export default function StartEarning() {
                   </p>
                 </div>
               </div>
-              {watchTime >= AD_DURATION && (
+              {watchTime >= EARN_DURATION && (
                 <div className="flex items-center gap-2 text-primary">
                   <RefreshCw className="w-5 h-5" />
                   <span className="font-medium">Ready for next!</span>
@@ -328,12 +272,12 @@ export default function StartEarning() {
             {/* Control Buttons */}
             <div className="flex gap-3">
               {isPlaying ? (
-                <Button variant="outline" className="flex-1" onClick={pauseAd}>
+                <Button variant="outline" className="flex-1" onClick={pauseEarning}>
                   <Pause className="w-4 h-4 mr-2" />
                   Pause
                 </Button>
               ) : (
-                <Button className="flex-1" onClick={startAd} disabled={!isTabActive}>
+                <Button className="flex-1" onClick={startEarning} disabled={!isTabActive}>
                   <Play className="w-4 h-4 mr-2" />
                   {watchTime > 0 ? 'Resume' : 'Start'}
                 </Button>
@@ -341,7 +285,7 @@ export default function StartEarning() {
               <Button
                 variant="secondary"
                 className="flex-1"
-                onClick={completeAd}
+                onClick={completeEarning}
                 disabled={watchTime === 0}
               >
                 Collect & Next
@@ -349,7 +293,7 @@ export default function StartEarning() {
             </div>
           </div>
 
-          {/* Anti-cheat Notice */}
+          {/* Fair Play Notice */}
           <div className="mt-6 p-4 rounded-xl bg-muted/50 flex items-start gap-3">
             <Eye className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
             <div className="text-sm text-muted-foreground">
